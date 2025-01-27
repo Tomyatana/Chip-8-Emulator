@@ -6,6 +6,7 @@
 #include "graphics.c"
 #include "instructions.h"
 #include <stdio.h>
+#include <string.h>
 
 #define GET_NIBBLE(x, n) (((x)>>((n) * 4)) & 0xF)
 #define U12(x, y) (u16)(((x)<<8) | y)
@@ -32,12 +33,20 @@ void decode(u16 inst) {
 		case SET_0:
 			if(inst == I_CLEAR)
 				clear_screen();
-			else if((inst & 0xFFF) > 0) goto Unknown;
+			else if(inst == I_RET) {
+				stack_counter--;
+				PC = stack[stack_counter];
+				stack[stack_counter] = 0;
+			} else if((inst & 0xFFF) > 0) goto Unknown;
 			break;
 		case I_JUMP:
 			PC = U12(GET_NIBBLE(inst, 2), inst_bytes[0]);
 			break;
-		/* Missing 0x2 */
+		case I_CALL:
+			stack[stack_counter] = PC;
+			stack_counter++;
+			PC = U12(GET_NIBBLE(inst, 2), inst_bytes[0]);
+			break;
 		case I_EQ:
 			if(V[GET_VX(inst)] == inst_bytes[0]) PC += 2;
 			break;
@@ -55,19 +64,19 @@ void decode(u16 inst) {
 			break;
 		case SET_8:
 			switch(GET_NIBBLE(inst, 0)) {
-				case 0:
+				case I_8_SET:
 					V[GET_VX(inst)] = V[GET_VY(inst)];
 					break;
-				case 1:
+				case I_8_OR:
 					V[GET_VX(inst)] |= V[GET_VY(inst)];
 					break;
-				case 2:
+				case I_8_AND:
 					V[GET_VX(inst)] &= V[GET_VY(inst)];
 					break;
-				case 3:
+				case I_8_XOR:
 					V[GET_VX(inst)] ^= V[GET_VY(inst)];
 					break;
-				case 4:
+				case I_8_ADD:
 					vx = V[GET_VX(inst)];
 					vx += V[GET_VY(inst)];
 					if(vx > 0xFFFF) {
@@ -78,28 +87,34 @@ void decode(u16 inst) {
 						V[GET_VX(inst)] = vx;
 					}
 					break;
-				case 5:
+				case I_8_MIN:
 					V[0xF] = V[GET_VY(inst)] >= V[GET_VX(inst)];
 					V[GET_VX(inst)] -= V[GET_VY(inst)];
 					break;
-				case 6:
+				case I_8_RSH:
 					V[0xF] = GET_BIT(V[GET_VX(inst)], 0);
 					V[GET_VX(inst)] >>= 1;
 					break;
-				case 7:
+				case I_8_MINYX:
 					V[0xF] = V[GET_VY(inst)] >= V[GET_VX(inst)];
 					V[GET_VX(inst)] = V[GET_VY(inst)] + V[GET_VX(inst)];
 					break;
-				case 0xE:
+				case I_8_LSH:
 					V[0xF] = GET_BIT(V[GET_VX(inst)], 7);
 					V[GET_VX(inst)] <<= 1;
 					break;
 			}
 			break;
-		case 0xA:
+		case I_NEQXY:
+			if(V[GET_VX(inst)] != V[GET_VY(inst)]) PC += 2;
+			break;
+		case I_SETIDX:
 			I = U12(GET_NIBBLE(inst, 2), inst_bytes[0]);
 			break;
-		case 0xD:
+		case I_RAND:
+			V[GET_VX(inst)] = rand()&inst_bytes[0];
+			break;
+		case I_DRAW:
 			x = V[GET_VX(inst)]%64;
 			y = V[GET_VY(inst)]%32;
 			n = GET_NIBBLE(inst, 0);
@@ -117,6 +132,38 @@ void decode(u16 inst) {
 				y++;
 			}
 
+			break;
+		
+		case SET_F:
+			switch(inst_bytes[0]) {
+				case I_F_GETTIME:
+					V[GET_VX(inst)] = timer;
+					break;
+				case I_F_SETTIME:
+					timer = V[GET_VX(inst)];
+					break;
+				case I_F_SPR:
+					I = FONT_ADDR + GET_NIBBLE(V[GET_VX(inst)], 0) * 5;
+					break;
+				case I_F_BCD:
+					vx = V[GET_VX(inst)];
+					RAM[I] = vx/100;
+					RAM[I+1] = (vx/10)%10;
+					RAM[I+2] = vx%10;
+					break;
+				case I_F_STR:
+					for(int i = 0; i < GET_VX(inst)+1; i++) {
+						RAM[I+i] = V[i];
+					}
+					break;
+				case I_F_LOD:
+					for(int i = 0; i < GET_VX(inst)+1; i++) {
+						V[i] = RAM[I+i];
+					}
+					break;
+				default:
+					goto Unknown;
+			}
 			break;
 
 		default:

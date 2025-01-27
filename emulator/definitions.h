@@ -1,14 +1,13 @@
 #ifndef DEFINITIONS_H
 #define DEFINITIONS_H
 
-#include "config.h"
-
-#define TIMER_FREQ 16.666
+#define TIMER_FREQ 60
+#define SECOND_CONST 1000000
 
 typedef unsigned char byte;
 typedef unsigned char u8;
+typedef unsigned char reg;
 
 typedef unsigned short u16;
-typedef unsigned short reg;
 
 #endif

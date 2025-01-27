@@ -2,6 +2,7 @@
 #define GRAPHICS_C
 
 #include "definitions.h"
+#include "config.h"
 #include <SDL2/SDL.h>
 #include <assert.h>
 #include <stdio.h>
@@ -9,7 +10,6 @@
 
 #define RES_W 64
 #define RES_H 32
-#define DIS_FREQ 16.666
 
 #define SDL_RENDERER_WHITE(renderer) SDL_SetRenderDrawColor((renderer), 255, 255, 255, 255)
 #define SDL_RENDERER_BLACK(renderer) SDL_SetRenderDrawColor((renderer), 0, 0, 0, 255)

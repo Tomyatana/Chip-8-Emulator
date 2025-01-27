@@ -1,12 +1,12 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
+#include "config.h"
 #include "definitions.h"
 
-#define INITIAL_SPACE 0x1FF
 
 byte RAM[4096] = {
-	[0x050] = // Font
+	[FONT_ADDR] = // Font
 	0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
 	0x20, 0x60, 0x20, 0x20, 0x70, // 1
 	0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
@@ -25,11 +25,12 @@ byte RAM[4096] = {
 	0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 };
 
-u16 PC = 0x200;
+u16 PC = INITIAL_SPACE+1;
 
-reg I = 0;
+u16 I = 0;
 
-byte stack[48] = {0};
+u16 stack[16] = {0};
+reg stack_counter = 0;
 
 u8 timer = 255;
 u8 sound_timer = 255;
