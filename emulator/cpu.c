@@ -4,9 +4,9 @@
 #include "definitions.h"
 #include "memory.c"
 #include "graphics.c"
+#include "input.c"
 #include "instructions.h"
 #include <stdio.h>
-#include <string.h>
 
 #define GET_NIBBLE(x, n) (((x)>>((n) * 4)) & 0xF)
 #define U12(x, y) (u16)(((x)<<8) | y)
@@ -133,6 +133,17 @@ void decode(u16 inst) {
 			}
 
 			break;
+
+		case SET_E:
+			switch(inst_bytes[0]) {
+				case I_E_KEQ:
+					if(GET_KEY(V[GET_VX(inst)]) == 1) PC += 2;
+					break;
+				case I_E_KNEQ:
+					if(GET_KEY(V[GET_VX(inst)]) != 1) PC += 2;
+					break;
+			}
+			break;
 		
 		case SET_F:
 			switch(inst_bytes[0]) {
@@ -141,6 +152,9 @@ void decode(u16 inst) {
 					break;
 				case I_F_SETTIME:
 					timer = V[GET_VX(inst)];
+					break;
+				case I_F_SETSOUND:
+					sound_timer = V[GET_VX(inst)];
 					break;
 				case I_F_SPR:
 					I = FONT_ADDR + GET_NIBBLE(V[GET_VX(inst)], 0) * 5;
@@ -175,7 +189,3 @@ void decode(u16 inst) {
 }
 
 #endif
-
-/* 01110000
- * 00001001
- * 10100010 */

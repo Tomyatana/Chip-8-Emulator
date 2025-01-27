@@ -33,6 +33,24 @@ int main(int argc, char* argv[]) {
 	while(running) {
 		keyboard = SDL_GetKeyboardState(NULL);
 
+		// Need to make this better
+		if(keyboard[SDL_SCANCODE_1]) SET_KEY(0x0);
+		if(keyboard[SDL_SCANCODE_2]) SET_KEY(0x1);
+		if(keyboard[SDL_SCANCODE_3]) SET_KEY(0x2);
+		if(keyboard[SDL_SCANCODE_4]) SET_KEY(0x3);
+		if(keyboard[SDL_SCANCODE_Q]) SET_KEY(0x4);
+		if(keyboard[SDL_SCANCODE_W]) SET_KEY(0x5);
+		if(keyboard[SDL_SCANCODE_E]) SET_KEY(0x6);
+		if(keyboard[SDL_SCANCODE_R]) SET_KEY(0x7);
+		if(keyboard[SDL_SCANCODE_A]) SET_KEY(0x8);
+		if(keyboard[SDL_SCANCODE_S]) SET_KEY(0x9);
+		if(keyboard[SDL_SCANCODE_D]) SET_KEY(0xa);
+		if(keyboard[SDL_SCANCODE_F]) SET_KEY(0xb);
+		if(keyboard[SDL_SCANCODE_Z]) SET_KEY(0xc);
+		if(keyboard[SDL_SCANCODE_X]) SET_KEY(0xd);
+		if(keyboard[SDL_SCANCODE_C]) SET_KEY(0xe);
+		if(keyboard[SDL_SCANCODE_V]) SET_KEY(0xf);
+
 		clock_gettime(CLOCK_MONOTONIC, &current_time);
 
 		long elapsed_timer = (current_time.tv_sec-timer_time.tv_sec) * SECOND_CONST
@@ -50,6 +68,7 @@ int main(int argc, char* argv[]) {
 		if(elapsed_cycle >= SECOND_CONST/FREQ) {
 			decode(fetch());
 			cycle_time = current_time;
+			key_states = 0;
 		}
 
 		while(SDL_PollEvent(&e) != 0) {
