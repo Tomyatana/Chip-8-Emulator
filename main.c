@@ -1,5 +1,6 @@
 #include "emulator/config.h"
 #include "emulator/definitions.h"
+#include "emulator/input.c"
 #include "emulator/memory.c"
 #include "emulator/graphics.c"
 #include "emulator/cpu.c"
@@ -64,25 +65,30 @@ int main(int argc, char* argv[]) {
 		if(elapsed_timer >= SECOND_CONST/TIMER_FREQ) {
 			if(sound_timer > 0) {
 				sound_timer--;
-				beep(1);
-			} else {
 				beep(0);
+			} else {
+				beep(1); // Unwanted Latency
 			}
-			if(sound_timer > 0)
+			if(timer > 0)
 				timer--;
 			timer_time = current_time;
 		}
 		if(elapsed_cycle >= SECOND_CONST/FREQ) {
-			decode(fetch());
 			cycle_time = current_time;
+			if(halted == 0)
+				decode(fetch());
 			key_states = 0;
 		}
 
 		while(SDL_PollEvent(&e) != 0) {
 			if(e.type == SDL_QUIT || keyboard[SDL_SCANCODE_ESCAPE])
 				running = 0;
-			if(e.type == SDL_KEYUP) {
+			if(e.type == SDL_KEYUP && halted > 1) {
 				lastKeyPress = keys[e.key.keysym.scancode];
+				if(lastKeyPress) {
+					V[GET_NIBBLE(halted, 0)] = lastKeyPress;
+					halted = 0;
+				}
 			}
 		}
 	}

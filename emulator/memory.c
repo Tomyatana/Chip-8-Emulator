@@ -32,9 +32,11 @@ u16 I = 0;
 u16 stack[16] = {0};
 reg stack_counter = 0;
 
-u8 timer = 255;
-u8 sound_timer = 255;
+u8 timer = 0xff;
+u8 sound_timer = 0xff;
 
 reg V[16] = {0};
+
+reg halted = 0; // MSB = IS HALTED, lower nibble = VX
 
 #endif

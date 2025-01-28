@@ -10,6 +10,7 @@
 
 #define GET_NIBBLE(x, n) (((x)>>((n) * 4)) & 0xF)
 #define U12(x, y) (u16)(((x)<<8) | y)
+#define JOIN_NIBBLES(x, y) (((x)<<4)|y)
 #define GET_BIT(x, n) ((x)>>(n)&1)
 #define GET_VX(x) GET_NIBBLE(x, 2)
 #define GET_VY(x) GET_NIBBLE(x, 1)
@@ -70,12 +71,15 @@ void decode(u16 inst) {
 					break;
 				case I_8_OR:
 					V[GET_VX(inst)] |= V[GET_VY(inst)];
+					V[0xF] = 0;
 					break;
 				case I_8_AND:
 					V[GET_VX(inst)] &= V[GET_VY(inst)];
+					V[0xF] = 0;
 					break;
 				case I_8_XOR:
 					V[GET_VX(inst)] ^= V[GET_VY(inst)];
+					V[0xF] = 0;
 					break;
 				case I_8_ADD:
 					V[GET_VX(inst)] += V[GET_VY(inst)];
@@ -156,9 +160,7 @@ void decode(u16 inst) {
 					V[GET_VX(inst)] = timer;
 					break;
 				case I_F_GETKEY:
-					if(lastKeyPress)
-						V[GET_VX(inst)] = lastKeyPress;
-					else PC -= 2;
+					halted = JOIN_NIBBLES(0xF, GET_VX(inst));
 					break;
 				case I_F_SETTIME:
 					timer = V[GET_VX(inst)];
