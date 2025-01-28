@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
 	fstat(fileno(exe), &st_exe);
 
 	
-	if(fread(RAM+INITIAL_SPACE+1, 1, 0xFFF-INITIAL_SPACE, exe) < 1) return 1;
+	if(fread(RAM+INITIAL_SPACE+1, 1, RAM_SIZE-1-INITIAL_SPACE, exe) < 1) return 1;
 
 	struct timespec timer_time, cycle_time, current_time;
 	clock_gettime(CLOCK_MONOTONIC, &timer_time);
