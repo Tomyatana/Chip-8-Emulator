@@ -5,11 +5,13 @@
 #include "emulator/graphics.c"
 #include "emulator/cpu.c"
 
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <time.h>
 
+int parseopts(int argc, char* argv[], unsigned long* freq);
 
 int main(int argc, char* argv[]) {
 	if(argc < 2) {
@@ -21,6 +23,10 @@ int main(int argc, char* argv[]) {
 		printf("Expected Chip-8 File\n");
 		return 1;
 	}
+	
+	unsigned long frequency = FREQ;
+
+	parseopts(argc, argv, &frequency);
 
 	struct stat st_exe;
 	fstat(fileno(exe), &st_exe);
@@ -69,7 +75,7 @@ int main(int argc, char* argv[]) {
 		long elapsed_cycle = (current_time.tv_sec-cycle_time.tv_sec) * SECOND_CONST
 			+ (current_time.tv_nsec-cycle_time.tv_nsec) / 1000;
 		
-		if(elapsed_timer >= SECOND_CONST/TIMER_FREQ) {
+		if(elapsed_timer >= ((float)SECOND_CONST/TIMER_FREQ)/((double)frequency/FREQ)) {
 			if(sound_timer > 0) {
 				sound_timer--;
 				beep(0);
@@ -84,7 +90,7 @@ int main(int argc, char* argv[]) {
 				halted = 0;
 			}
 		}
-		if(elapsed_cycle >= SECOND_CONST/FREQ) {
+		if(elapsed_cycle >= SECOND_CONST/frequency) {
 			cycle_time = current_time;
 			if(halted == 0)
 				decode(fetch());
@@ -105,5 +111,17 @@ int main(int argc, char* argv[]) {
 	}
 	SDL_DestroyWindow(display.window);
 	SDL_Quit();
+	return 0;
+}
+
+int parseopts(int argc, char* argv[], unsigned long* freq) {
+	int option;
+	while((option = getopt(argc, argv, "f:")) != -1) {
+		switch(option) {
+			case 'f':
+				*freq = atol(optarg);
+				break;
+		}
+	}
 	return 0;
 }
