@@ -4,7 +4,9 @@
 #include "definitions.h"
 #include "config.h"
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_audio.h>
 #include <assert.h>
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -15,6 +17,7 @@
 #define SDL_RENDERER_BLACK(renderer) SDL_SetRenderDrawColor((renderer), 0, 0, 0, 255)
 
 byte Screen[RES_W*RES_H] = {0};
+SDL_AudioDeviceID audio_device;
 
 struct Display {
 	SDL_Renderer* renderer;
@@ -23,8 +26,22 @@ struct Display {
 
 struct Display display = {0};
 
+void beep_callback(void* userdata, Uint8* stream, int len) {
+	Sint16* buffer = (Sint16*) stream;
+	static double phase = 0.0;
+	double phase_inc = 2.0 * 3.1415926535 * 8000 / 4096;
+
+	for(int i = 0; i < len / 2; i++) {
+		buffer[i] = (Sint16)(28000 * sin(phase));
+		phase += phase_inc;
+		if(phase >= 2.0 * 3.1415926535) {
+			phase -= 2.0 * 3.1415926535;
+		}
+	}
+}
+
 int init_graphics() {
-	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
+	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
 		goto Error;
 	}
 	
@@ -50,6 +67,14 @@ int init_graphics() {
 	display.window = window;
 	display.renderer = renderer;
 
+	SDL_AudioSpec spec;
+	spec.freq = 8000;
+	spec.format = AUDIO_S16SYS;
+	spec.channels = 1;
+	spec.samples = 4096;
+	spec.callback = beep_callback;
+	audio_device = SDL_OpenAudioDevice(NULL, 0, &spec, NULL, 0);
+
 	return 0;
 
 Error:
@@ -63,6 +88,9 @@ void update_screen() {
 		if(Screen[i] > 0) {
 			SDL_RENDERER_WHITE(display.renderer);
 			SDL_RenderDrawPoint(display.renderer, i%RES_W, i/RES_W);
+		} else {
+			SDL_RENDERER_BLACK(display.renderer);
+			SDL_RenderDrawPoint(display.renderer, i%RES_W, i/RES_W);
 		}
 	}
 	SDL_RenderPresent(display.renderer);
@@ -75,10 +103,16 @@ int draw_point(int x, int y) {
 }
 
 void clear_screen() {
-	memset(Screen, 0, sizeof Screen);
+	memset(Screen, 0, RES_W * RES_H);
 	SDL_RENDERER_BLACK(display.renderer);
 	SDL_RenderClear(display.renderer);
+	SDL_RenderPresent(display.renderer);
 	update_screen();
+}
+
+void beep(int n) {
+	SDL_PauseAudioDevice(audio_device, n);
+	return;
 }
 
 #endif

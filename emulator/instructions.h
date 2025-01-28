@@ -26,6 +26,7 @@
 
 #define I_NEQXY 0x9
 #define I_SETIDX 0xA
+#define I_JUMPOFF 0xB
 #define I_RAND 0xC
 #define I_DRAW 0xD
 
@@ -35,8 +36,10 @@
 
 #define SET_F 0xF
 #define I_F_GETTIME 0x07
+#define I_F_GETKEY 0x0A
 #define I_F_SETTIME 0x15
 #define I_F_SETSOUND 0x18
+#define I_F_ADDXI 0x1E
 #define I_F_SPR 0x29
 #define I_F_BCD 0x33
 #define I_F_STR 0x55

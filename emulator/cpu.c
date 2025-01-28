@@ -22,12 +22,13 @@ u16 fetch() {
 }
 
 void decode(u16 inst) {
-	volatile byte* inst_bytes = (void*)&inst;
+	byte* inst_bytes = (void*)&inst;
 
-	volatile byte x = 0;
-	volatile byte y = 0;
-	volatile byte n = 0;
-	volatile int vx = 0;
+	byte x;
+	byte y;
+	byte n;
+	int vx;
+	byte flag;
 
 	switch(GET_NIBBLE(inst, 3)) {
 		case SET_0:
@@ -77,31 +78,30 @@ void decode(u16 inst) {
 					V[GET_VX(inst)] ^= V[GET_VY(inst)];
 					break;
 				case I_8_ADD:
-					vx = V[GET_VX(inst)];
-					vx += V[GET_VY(inst)];
-					if(vx > 0xFFFF) {
-						V[0xF] = 1;
-						V[GET_VX(inst)] = vx;
-					} else {
-						V[0xF] = 0;
-						V[GET_VX(inst)] = vx;
-					}
+					V[GET_VX(inst)] += V[GET_VY(inst)];
+					V[0xF] = V[GET_VX(inst)] < V[GET_VY(inst)];
 					break;
 				case I_8_MIN:
-					V[0xF] = V[GET_VY(inst)] >= V[GET_VX(inst)];
+					flag =  V[GET_VX(inst)] >= V[GET_VY(inst)];
 					V[GET_VX(inst)] -= V[GET_VY(inst)];
+					V[0xF] = flag;
 					break;
 				case I_8_RSH:
-					V[0xF] = GET_BIT(V[GET_VX(inst)], 0);
+					flag = GET_BIT(V[GET_VY(inst)], 0);
+					V[GET_VX(inst)] = V[GET_VY(inst)];
 					V[GET_VX(inst)] >>= 1;
+					V[0xF] = flag;
 					break;
 				case I_8_MINYX:
-					V[0xF] = V[GET_VY(inst)] >= V[GET_VX(inst)];
-					V[GET_VX(inst)] = V[GET_VY(inst)] + V[GET_VX(inst)];
+					flag = V[GET_VY(inst)] >= V[GET_VX(inst)];
+					V[GET_VX(inst)] = V[GET_VY(inst)] - V[GET_VX(inst)];
+					V[0xF] = flag;
 					break;
 				case I_8_LSH:
-					V[0xF] = GET_BIT(V[GET_VX(inst)], 7);
+					flag = GET_BIT(V[GET_VY(inst)], 7);
+					V[GET_VX(inst)] = V[GET_VY(inst)];
 					V[GET_VX(inst)] <<= 1;
+					V[0xF] = flag;
 					break;
 			}
 			break;
@@ -110,6 +110,9 @@ void decode(u16 inst) {
 			break;
 		case I_SETIDX:
 			I = U12(GET_NIBBLE(inst, 2), inst_bytes[0]);
+			break;
+		case I_JUMPOFF:
+			PC = U12(GET_NIBBLE(inst, 2), inst_bytes[0]) + V[0x0];
 			break;
 		case I_RAND:
 			V[GET_VX(inst)] = rand()&inst_bytes[0];
@@ -142,6 +145,8 @@ void decode(u16 inst) {
 				case I_E_KNEQ:
 					if(GET_KEY(V[GET_VX(inst)]) != 1) PC += 2;
 					break;
+				default:
+					goto Unknown;
 			}
 			break;
 		
@@ -150,11 +155,19 @@ void decode(u16 inst) {
 				case I_F_GETTIME:
 					V[GET_VX(inst)] = timer;
 					break;
+				case I_F_GETKEY:
+					if(lastKeyPress)
+						V[GET_VX(inst)] = lastKeyPress;
+					else PC -= 2;
+					break;
 				case I_F_SETTIME:
 					timer = V[GET_VX(inst)];
 					break;
 				case I_F_SETSOUND:
 					sound_timer = V[GET_VX(inst)];
+					break;
+				case I_F_ADDXI:
+					I += V[GET_VX(inst)];
 					break;
 				case I_F_SPR:
 					I = FONT_ADDR + GET_NIBBLE(V[GET_VX(inst)], 0) * 5;
@@ -167,12 +180,14 @@ void decode(u16 inst) {
 					break;
 				case I_F_STR:
 					for(int i = 0; i < GET_VX(inst)+1; i++) {
-						RAM[I+i] = V[i];
+						RAM[I] = V[i];
+						I++;
 					}
 					break;
 				case I_F_LOD:
 					for(int i = 0; i < GET_VX(inst)+1; i++) {
-						V[i] = RAM[I+i];
+						V[i] = RAM[I];
+						I++;
 					}
 					break;
 				default:
