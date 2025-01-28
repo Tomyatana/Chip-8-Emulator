@@ -79,6 +79,10 @@ int main(int argc, char* argv[]) {
 			if(timer > 0)
 				timer--;
 			timer_time = current_time;
+			if(halted == 1) {
+				update_screen();
+				halted = 0;
+			}
 		}
 		if(elapsed_cycle >= SECOND_CONST/FREQ) {
 			cycle_time = current_time;

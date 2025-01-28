@@ -33,8 +33,10 @@ void decode(u16 inst) {
 
 	switch(GET_NIBBLE(inst, 3)) {
 		case SET_0:
-			if(inst == I_CLEAR)
+			if(inst == I_CLEAR) {
+				halted = 1;
 				clear_screen();
+			}
 			else if(inst == I_RET) {
 				stack_counter--;
 				PC = stack[stack_counter];
@@ -122,6 +124,7 @@ void decode(u16 inst) {
 			V[GET_VX(inst)] = rand()&inst_bytes[0];
 			break;
 		case I_DRAW:
+			halted = 1;
 			x = V[GET_VX(inst)]%64;
 			y = V[GET_VY(inst)]%32;
 			n = GET_NIBBLE(inst, 0);

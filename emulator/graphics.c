@@ -98,7 +98,6 @@ void update_screen() {
 
 int draw_point(int x, int y) {
 	Screen[RES_W*y+x] = !Screen[RES_W*y+x];
-	update_screen();
 	return Screen[RES_W*y+x];
 }
 
@@ -107,7 +106,6 @@ void clear_screen() {
 	SDL_RENDERER_BLACK(display.renderer);
 	SDL_RenderClear(display.renderer);
 	SDL_RenderPresent(display.renderer);
-	update_screen();
 }
 
 void beep(int n) {
